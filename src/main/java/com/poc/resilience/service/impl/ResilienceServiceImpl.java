@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.Duration;
-import java.util.function.Function;
 
 @Slf4j
 @Service
@@ -25,12 +24,8 @@ public class ResilienceServiceImpl implements ResilienceService {
                 .build();
         RetryRegistry retryRegistry = RetryRegistry.of(config);
         Retry retry = retryRegistry.retry("gettingPriceFor" + product);
-
         retry.getEventPublisher().onRetry(e -> log.info("Retry attempt " + e.getNumberOfRetryAttempts() + " for " + e.getName()));
-
-        Function<String, String> decorated = Retry.decorateFunction(retry, (String s) -> this.getProductPrice(product));
-
-        String apply = decorated.apply(product);
+        String apply = Retry.decorateFunction(retry, this::getProductPrice).apply(product);
         log.info(apply);
         return apply;
     }
