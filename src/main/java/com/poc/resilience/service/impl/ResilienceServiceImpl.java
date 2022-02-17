@@ -18,16 +18,21 @@ public class ResilienceServiceImpl implements ResilienceService {
 
     @Override
     public String retry(String product) {
-        Retry retry = retryRegistry.retry("getPrice");
-        String apply = Retry.decorateFunction(retry, this::getProductPrice).apply(product);
-        log.info(apply);
-        return apply;
+        try {
+            Retry retry = retryRegistry.retry("getPrice");
+            String apply = Retry.decorateFunction(retry, this::getProductPrice).apply(product);
+            log.info(apply);
+            return apply;
+        } catch (Exception ex) {
+            log.error("Exception - {}", ex.getMessage());
+            return "Not able to find price for " + product + " as " + ex.getMessage();
+        }
     }
 
     private String getProductPrice(String product) {
         SecureRandom r = new SecureRandom();
         int chance = r.nextInt(100);
-        if (chance < 70) {
+        if (chance < 50) {
             System.out.println(" Service down");
             throw new RuntimeException("Service not available");
         }
